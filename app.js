@@ -19,16 +19,18 @@ const pizzas = {
     }
 };
 
+function logRequest(verb) {
+    console.log(`${verb} request received`);
+}
 
 app.get('/pizzas', (req, res) => {
-    console.log('GET request received');
+    logRequest(req.method);
     res.send(pizzas);
 });
 
 
 app.get('/pizzas/:name', (req, res) => {
-    console.log('GET request received');
-    
+    logRequest(req.method);
     const pizzaName = req.params.name;
 
     if (!pizzas[pizzaName]) {
