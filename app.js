@@ -24,6 +24,16 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use((req, res, next) => {
+    console.log('Middleware 1');
+    next();
+});
+
+app.use((req, res, next) => {
+    console.log('Middleware 2');
+    next();
+});
+
 app.get('/pizzas', (req, res) => {
     res.send(pizzas);
 });
