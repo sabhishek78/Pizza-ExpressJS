@@ -2,11 +2,9 @@ const express = require('express');
 
 const app = express();
 
-// Middleware that allows Express to understand JSON request bodies
 app.use(express.json());
 
 
-// PIZZA DATA
 const pizzas = {
     margherita: {
         price: 200,
@@ -25,35 +23,28 @@ const pizzas = {
 };
 
 
-// CHECK PIZZA MIDDLEWARE
-const checkPizza = (req, res, next) => {
+// ========================================
+// PARAMETER MIDDLEWARE
+// Runs automatically for every :name
+// ========================================
 
-    const pizzaName = req.params.name;
+app.param('name', (req, res, next, name) => {
 
-    if (!pizzas[pizzaName]) {
+    console.log(`Looking for pizza: ${name}`);
+
+    if (!pizzas[name]) {
         return res.status(404).send('Pizza not found');
     }
 
-    // Attach the pizza to req
-    req.pizza = pizzas[pizzaName];
-
-    next();
-};
-
-
-// LOGGING MIDDLEWARE
-app.use((req, res, next) => {
-
-    console.log(`${req.method} request received`);
+    req.pizza = pizzas[name];
 
     next();
 });
 
 
-// =================================
+// ========================================
 // GET ALL PIZZAS
-// GET /pizzas
-// =================================
+// ========================================
 
 app.get('/pizzas', (req, res) => {
 
@@ -62,58 +53,23 @@ app.get('/pizzas', (req, res) => {
 });
 
 
-// =================================
+// ========================================
 // GET ONE PIZZA
-// GET /pizzas/:name
-// =================================
+// app.param() automatically runs first
+// ========================================
 
-app.get('/pizzas/:name', checkPizza, (req, res) => {
+app.get('/pizzas/:name', (req, res) => {
 
     res.send(req.pizza);
 
 });
 
 
-// =================================
-// CREATE A NEW PIZZA
-// POST /pizzas
-//
-// Example body:
-// {
-//     "name": "farmhouse",
-//     "price": 300,
-//     "quantity": 4
-// }
-// =================================
-
-app.post('/pizzas', (req, res) => {
-
-    const newPizza = req.body;
-
-    pizzas[newPizza.name] = {
-        price: newPizza.price,
-        quantity: newPizza.quantity
-    };
-
-    res.send(pizzas[newPizza.name]);
-
-});
-
-
-// =================================
+// ========================================
 // ADD STOCK
-// POST /pizzas/:name/add
-//
-// Example:
-// POST /pizzas/paneer/add
-//
-// Body:
-// {
-//     "quantity": 5
-// }
-// =================================
+// ========================================
 
-app.post('/pizzas/:name/add', checkPizza, (req, res) => {
+app.post('/pizzas/:name/add', (req, res) => {
 
     req.pizza.quantity += req.body.quantity;
 
@@ -122,25 +78,15 @@ app.post('/pizzas/:name/add', checkPizza, (req, res) => {
 });
 
 
-// =================================
+// ========================================
 // REMOVE STOCK
-// POST /pizzas/:name/remove
-//
-// Example:
-// POST /pizzas/paneer/remove
-//
-// Body:
-// {
-//     "quantity": 5
-// }
-// =================================
+// ========================================
 
-app.post('/pizzas/:name/remove', checkPizza, (req, res, next) => {
+app.post('/pizzas/:name/remove', (req, res, next) => {
 
     if (req.pizza.quantity < req.body.quantity) {
 
         const error = new Error('Not enough pizza in stock');
-
         error.status = 400;
 
         return next(error);
@@ -153,63 +99,28 @@ app.post('/pizzas/:name/remove', checkPizza, (req, res, next) => {
 });
 
 
-// =================================
-// DELETE A PIZZA
-// DELETE /pizzas/:name
-// =================================
+// ========================================
+// DELETE PIZZA
+// ========================================
 
-app.delete('/pizzas/:name', checkPizza, (req, res) => {
+app.delete('/pizzas/:name', (req, res) => {
 
-    const pizzaName = req.params.name;
-
-    delete pizzas[pizzaName];
+    delete pizzas[req.params.name];
 
     res.status(204).send();
 
 });
 
 
-// =================================
-// RENAME A PIZZA
-// PUT /pizzas/:name/name
-//
-// Example:
-// PUT /pizzas/paneer/name
-//
-// Body:
-// {
-//     "newName": "cheese-paneer"
-// }
-// =================================
-
-app.put('/pizzas/:name/name', checkPizza, (req, res) => {
-
-    const oldName = req.params.name;
-
-    const newName = req.body.newName;
-
-    pizzas[newName] = pizzas[oldName];
-
-    delete pizzas[oldName];
-
-    res.send(pizzas[newName]);
-
-});
-
-
-// =================================
-// ERROR-HANDLING MIDDLEWARE
-// =================================
+// ========================================
+// ERROR MIDDLEWARE
+// ========================================
 
 app.use((err, req, res, next) => {
 
-    const status = err.status || 500;
-
-    res.status(status).send(err.message);
+    res.status(err.status || 500).send(err.message);
 
 });
 
 
-module.exports = {
-    app
-};
+module.exports = { app };
